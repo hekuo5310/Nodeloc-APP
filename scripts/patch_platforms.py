@@ -69,6 +69,29 @@ def patch_android():
     write(p, m)
 
 
+@step('Android compileSdk 提升（file_picker 等插件需要 35+）')
+def patch_android_gradle():
+    for p in ['android/app/build.gradle.kts', 'android/app/build.gradle']:
+        m = read(p)
+        if m is None:
+            continue
+        if 'compileSdk = flutter.compileSdkVersion' in m:
+            m = m.replace(
+                'compileSdk = flutter.compileSdkVersion',
+                'compileSdk = 35',
+            )
+        elif 'compileSdkVersion flutter.compileSdkVersion' in m:
+            m = m.replace(
+                'compileSdkVersion flutter.compileSdkVersion',
+                'compileSdkVersion 35',
+            )
+        else:
+            continue
+        write(p, m)
+        return
+    raise FileNotFoundError('android/app/build.gradle(.kts)')
+
+
 # ---------------------------------------------------------------- iOS
 
 @step('iOS Info.plist / 工程（显示名 + Bundle ID）')
@@ -213,6 +236,7 @@ if __name__ == '__main__':
     only = sys.argv[1] if len(sys.argv) > 1 else None
     jobs = {
         'android': patch_android,
+        'android-gradle': patch_android_gradle,
         'ios': patch_ios,
         'macos': patch_macos_entitlements,
         'macos-config': patch_macos_config,
