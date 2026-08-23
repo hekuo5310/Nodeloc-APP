@@ -172,8 +172,10 @@ jobs:
       - name: Pack macOS app
         run: |
           cd build/macos/Build/Products/Release
-          ls -la
-          zip -rqry "$GITHUB_WORKSPACE/nodeloc-macos.zip" . -i "*.app"
+          APP=$(find . -maxdepth 1 -name '*.app' -print -quit)
+          echo "Packing: $APP"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "$GITHUB_WORKSPACE/nodeloc-macos.zip"
+          ls -lh "$GITHUB_WORKSPACE/nodeloc-macos.zip"
 
       - name: Build iOS (unsigned)
         run: flutter build ios --release --no-codesign
