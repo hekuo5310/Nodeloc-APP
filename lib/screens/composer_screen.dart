@@ -81,11 +81,11 @@ class _ComposerScreenState extends State<ComposerScreen> {
     if (_uploading) return;
     final app = context.read<AppState>();
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final files = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );
-      final file = result?.files.single;
+      final file = files.isNotEmpty ? files.single : null;
       final path = file?.path;
       if (file == null || path == null) return;
 
