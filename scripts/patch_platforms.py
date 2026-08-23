@@ -69,26 +69,23 @@ def patch_android():
     write(p, m)
 
 
-@step('Android compileSdk 提升（file_picker 等插件需要 35+）')
+@step('Android compileSdk 提升到 36（flutter_plugin_android_lifecycle 等插件要求）')
 def patch_android_gradle():
+    import re as _re
     for p in ['android/app/build.gradle.kts', 'android/app/build.gradle']:
         m = read(p)
         if m is None:
             continue
-        if 'compileSdk = flutter.compileSdkVersion' in m:
-            m = m.replace(
-                'compileSdk = flutter.compileSdkVersion',
-                'compileSdk = 35',
-            )
-        elif 'compileSdkVersion flutter.compileSdkVersion' in m:
-            m = m.replace(
-                'compileSdkVersion flutter.compileSdkVersion',
-                'compileSdkVersion 35',
-            )
-        else:
-            continue
-        write(p, m)
-        return
+        orig = m
+        # Kotlin DSL: compileSdk = <n|flutter.compileSdkVersion>
+        m = _re.sub(r'compileSdk\s*=\s*(?:flutter\.compileSdkVersion|\d+)',
+                    'compileSdk = 36', m)
+        # Groovy DSL: compileSdkVersion <n|flutter.compileSdkVersion>
+        m = _re.sub(r'compileSdkVersion\s+(?:flutter\.compileSdkVersion|\d+)',
+                    'compileSdkVersion 36', m)
+        if m != orig:
+            write(p, m)
+            return
     raise FileNotFoundError('android/app/build.gradle(.kts)')
 
 
