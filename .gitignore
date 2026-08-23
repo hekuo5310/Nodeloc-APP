@@ -1,0 +1,29 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 平台目录由 CI 中 `flutter create .` 按当前 Flutter 版本生成，不入库
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+test/
+.metadata
+
+# 杂项
+*.log
+.DS_Store
+pubspec.lock

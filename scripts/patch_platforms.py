@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+"""
+Nodeloc App 平台补丁脚本（在 CI 中 `flutter create .` 生成平台目录后运行）：
+- Android: INTERNET 权限、应用名称、图标
+- iOS:     显示名称、Bundle ID、图标
+- macOS:   网络权限（沙盒）、产品名称、图标
+- Windows: 应用名称
+- Linux:   窗口标题
+所有步骤独立容错，单项失败不影响整体构建。
+"""
+import json
+import os
+import re
+import sys
+
+APP_LABEL = 'Nodeloc'
+PROJECT_NAME = 'nodeloc_app'
+BUNDLE_ID = 'com.nodeloc.app'
+
+
+def read(p):
+    try:
+        with open(p, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception:
+        return None
+
+
+def write(p, content):
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+
+def step(name):
+    def deco(fn):
+        def wrapper(*a, **kw):
+            try:
+                fn(*a, **kw)
+                print(f'[OK] {name}')
+            except Exception as e:
+                print(f'[SKIP] {name}: {e}')
+        return wrapper
+    return deco
+
+
+# ---------------------------------------------------------------- Android
+
+@step('Android Manifest（INTERNET 权限 + 应用名）')
+def patch_android():
+    p = 'android/app/src/main/AndroidManifest.xml'
+    m = read(p)
+    if m is None:
+        raise FileNotFoundError(p)
+    if 'android.permission.INTERNET' not in m:
+        m = m.replace(
+            '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+            '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n'
+            '    <uses-permission android:name="android.permission.INTERNET"/>',
+            1,
+        )
+    m = m.replace(f'android:label="{PROJECT_NAME}"', f'android:label="{APP_LABEL}"')
+    write(p, m)
+
+
+# ---------------------------------------------------------------- iOS
+
+@step('iOS Info.plist / 工程（显示名 + Bundle ID）')
+def patch_ios():
+    p = 'ios/Runner/Info.plist'
+    m = read(p)
+    if m is not None:
+        m = re.sub(
+            r'(<key>CFBundleDisplayName</key>\s*<string>)[^<]*(</string>)',
+            r'\g<1>' + APP_LABEL + r'\g<2>',
+            m,
+        )
+        m = re.sub(
+            r'(<key>CFBundleName</key>\s*<string>)[^<]*(</string>)',
+            r'\g<1>' + APP_LABEL + r'\g<2>',
+            m,
+        )
+        write(p, m)
+
+    proj = 'ios/Runner.xcodeproj/project.pbxproj'
+    m = read(proj)
+    if m is not None:
+        m = m.replace('com.nodeloc.' + PROJECT_NAME.replace('_', ''), BUNDLE_ID)
+        m = m.replace('com.nodeloc.' + PROJECT_NAME, BUNDLE_ID)
+        write(proj, m)
+
+
+# ---------------------------------------------------------------- macOS
+
+@step('macOS 沙盒网络权限')
+def patch_macos_entitlements():
+    keys = (
+        '\t<key>com.apple.security.network.server</key>\n'
+        '\t<true/>\n'
+        '\t<key>com.apple.security.network.client</key>\n'
+        '\t<true/>\n'
+    )
+    for name in ['DebugProfile.entitlements', 'Release.entitlements']:
+        p = f'macos/Runner/{name}'
+        m = read(p)
+        if m is None:
+            raise FileNotFoundError(p)
+        if 'com.apple.security.network.client' in m:
+            continue
+        m = m.replace('</dict>', keys + '</dict>')
+        write(p, m)
+
+
+@step('macOS 产品名称 / Bundle ID')
+def patch_macos_config():
+    p = 'macos/Runner/Configs/AppInfo.xcconfig'
+    m = read(p)
+    if m is None:
+        raise FileNotFoundError(p)
+    m = re.sub(r'(?m)^PRODUCT_NAME\s*=.*$', f'PRODUCT_NAME = {APP_LABEL}', m)
+    m = re.sub(
+        r'(?m)^PRODUCT_BUNDLE_IDENTIFIER\s*=.*$',
+        f'PRODUCT_BUNDLE_IDENTIFIER = {BUNDLE_ID}',
+        m,
+    )
+    m = re.sub(
+        r'(?m)^PRODUCT_COPYRIGHT\s*=.*$',
+        'PRODUCT_COPYRIGHT = Copyright (c) 2026 Nodeloc App Contributors.',
+        m,
+    )
+    write(p, m)
+
+
+# ---------------------------------------------------------------- Windows / Linux
+
+@step('Windows 应用名称')
+def patch_windows():
+    for p in [
+        'windows/runner/main.cpp',
+        'windows/runner/CMakeLists.txt',
+        'windows/runner/Runner.rc',
+    ]:
+        m = read(p)
+        if m is None:
+            continue
+        m = m.replace(PROJECT_NAME, APP_LABEL)
+        write(p, m)
+
+
+@step('Linux 窗口标题')
+def patch_linux():
+    p = 'linux/runner/my_application.cc'
+    m = read(p)
+    if m is None:
+        raise FileNotFoundError(p)
+    m = m.replace(f'"{PROJECT_NAME}"', f'"{APP_LABEL}"')
+    write(p, m)
+
+
+# ---------------------------------------------------------------- 图标
+
+@step('应用图标（Android mipmap / iOS & macOS AppIcon）')
+def make_icons():
+    try:
+        from PIL import Image
+    except Exception:
+        print('  PIL 不可用，跳过图标生成')
+        return
+    src_p = 'assets/icon/app_icon.png'
+    if not os.path.exists(src_p):
+        raise FileNotFoundError(src_p)
+    src = Image.open(src_p).convert('RGBA')
+
+    if os.path.isdir('android/app/src/main/res'):
+        sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+        for bucket, px in sizes.items():
+            d = f'android/app/src/main/res/mipmap-{bucket}'
+            os.makedirs(d, exist_ok=True)
+            src.resize((px, px), Image.LANCZOS).save(f'{d}/ic_launcher.png')
+
+    for platform, folder in [('ios', 'ios/Runner/Assets.xcassets/AppIcon.appiconset'),
+                             ('macos', 'macos/Runner/Assets.xcassets/AppIcon.appiconset')]:
+        if not os.path.isdir(folder):
+            continue
+        src.resize((1024, 1024), Image.LANCZOS).save(f'{folder}/icon-1024.png')
+        write(f'{folder}/contents.json', json.dumps({
+            'images': [
+                {
+                    'filename': 'icon-1024.png',
+                    'idiom': 'universal',
+                    'platform': platform,
+                    'size': '1024x1024',
+                }
+            ],
+            'info': {'author': 'xcode', 'version': 1},
+        }, indent=2))
+
+
+if __name__ == '__main__':
+    only = sys.argv[1] if len(sys.argv) > 1 else None
+    jobs = {
+        'android': patch_android,
+        'ios': patch_ios,
+        'macos': patch_macos_entitlements,
+        'macos-config': patch_macos_config,
+        'windows': patch_windows,
+        'linux': patch_linux,
+        'icons': make_icons,
+    }
+    if only and only in jobs:
+        jobs[only]()
+    else:
+        for fn in jobs.values():
+            fn()
+    print('平台补丁完成。')

@@ -1,0 +1,31 @@
+name: nodeloc_app
+description: "NodeLoc 社区全平台客户端（Android / iOS / Windows / macOS / Linux）"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  dio: ^5.4.0
+  cookie_jar: ^4.0.8
+  dio_cookie_manager: ^3.1.1
+  shared_preferences: ^2.2.0
+  path_provider: ^2.1.0
+  flutter_widget_from_html: ^0.15.0
+  cached_network_image: ^3.3.0
+  url_launcher: ^6.2.0
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/app_icon.png

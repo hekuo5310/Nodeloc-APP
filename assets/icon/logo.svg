@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="280" viewBox="0 0 960 280" role="img" aria-label="nodeloc">
+  
+  <g transform="translate(30,0)" fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#009966">
+      <path d="M0,222 L0,172 A50,50 0 0 1 100,172 L100,222"/>
+      <circle cx="200" cy="172" r="50"/>
+      <circle cx="350" cy="172" r="50"/>
+      <path d="M400,58 L400,222"/>
+      <path d="M450,172 L550,172"/>
+      <path d="M550,172 A50,50 0 1 0 541,201"/>
+    </g>
+    <g stroke="#FF9933">
+      <path d="M600,58 L600,222"/>
+      <circle cx="700" cy="172" r="50"/>
+      <path d="M891,143 A50,50 0 1 0 891,201"/>
+    </g>
+  </g>
+</svg>
