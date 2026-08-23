@@ -30,6 +30,7 @@ class _ComposerScreenState extends State<ComposerScreen> {
   final _contentFocus = FocusNode();
 
   List<Category>? _categories;
+  Map<int, String>? _parentNames;
   int? _selectedCategory;
   bool _busy = false;
   String? _error;
@@ -53,12 +54,20 @@ class _ComposerScreenState extends State<ComposerScreen> {
   Future<void> _loadCategories() async {
     try {
       final cats = await context.read<AppState>().api.categories();
+      // 只列出子分类（Discourse 顶级分类通常是容器，不允许直接发帖）
+      final parents = <int, String>{};
+      for (final c in cats) {
+        if (c.parentId == null) parents[c.id] = c.name;
+      }
       final usable = cats
-          .where((c) => !c.readRestricted)
+          .where((c) => c.parentId != null && !c.readRestricted)
           .toList()
         ..sort((a, b) => (a.position ?? 99).compareTo(b.position ?? 99));
       if (!mounted) return;
-      setState(() => _categories = usable);
+      setState(() {
+        _categories = usable;
+        _parentNames = parents;
+      });
     } catch (_) {}
   }
 
@@ -186,7 +195,13 @@ class _ComposerScreenState extends State<ComposerScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(c.name),
+                                Flexible(
+                                  child: Text(
+                                    '${_parentNames?[c.parentId] ?? ''} / ${c.name}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 13.5),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

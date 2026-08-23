@@ -232,10 +232,34 @@ class DiscourseApi {
     return TopicListResult.fromJson(d);
   }
 
-  Future<List<Category>> categories() async {
-    final d = await _getJson('/categories.json');
+  /// categories（含子分类，展平后返回）
+  /// 注：Discourse 中顶级分类通常只是容器，实际发帖发生在子分类
+  Future<List<Category>> categories({bool includeSubcategories = true}) async {
+    final d = await _getJson('/categories.json', query: {
+      if (includeSubcategories) 'include_subcategories': 'true',
+    });
     final list = (d['category_list'] as Map?)?['categories'] as List? ?? [];
-    return list.map((e) => Category.fromJson(e)).toList();
+    final result = <Category>[];
+    for (final e in list) {
+      final top = Category.fromJson(e);
+      result.add(top);
+      for (final s in (e['subcategory_list'] as List? ?? [])) {
+        final sub = Category.fromJson(s);
+        result.add(Category(
+          id: sub.id,
+          name: sub.name,
+          color: sub.color,
+          textColor: sub.textColor,
+          slug: sub.slug,
+          topicCount: sub.topicCount,
+          descriptionExcerpt: sub.descriptionExcerpt,
+          parentId: top.id,
+          position: sub.position,
+          readRestricted: sub.readRestricted,
+        ));
+      }
+    }
+    return result;
   }
 
   Future<TopicDetail> topic(int id) async {
@@ -276,7 +300,7 @@ class DiscourseApi {
   // ---------------------------------------------------------------- 点赞
 
   Future<void> likePost(int postId) =>
-      _mutate('PUT', '/post_actions',
+      _mutate('POST', '/post_actions',
               data: {'id': postId.toString(), 'post_action_type_id': '2'})
           .then((_) {});
 
