@@ -13,6 +13,13 @@ import os
 import re
 import sys
 
+# Windows 控制台默认 cp1252，强制 UTF-8 防止中文输出崩溃
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 APP_LABEL = 'Nodeloc'
 PROJECT_NAME = 'nodeloc_app'
 BUNDLE_ID = 'com.nodeloc.app'

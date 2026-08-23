@@ -98,7 +98,7 @@ jobs:
       - name: Pack artifact
         run: |
           cd build/linux/x64/release
-          tar -czf ../../../nodeloc-linux.tar.gz bundle
+          tar -czf "$GITHUB_WORKSPACE/nodeloc-linux.tar.gz" bundle
 
       - uses: actions/upload-artifact@v4
         with:
@@ -160,7 +160,7 @@ jobs:
 
       - name: Patch platform files & icons
         run: |
-          python3 -m pip install --quiet pillow
+          python3 -m pip install --quiet --break-system-packages pillow || true
           python3 scripts/patch_platforms.py
 
       - name: Pub get
@@ -172,7 +172,7 @@ jobs:
       - name: Pack macOS app
         run: |
           cd build/macos/Build/Products/Release
-          zip -rqry ../../../nodeloc-macos.zip "*.app"
+          zip -rqry "$GITHUB_WORKSPACE/nodeloc-macos.zip" "*.app"
 
       - name: Build iOS (unsigned)
         run: flutter build ios --release --no-codesign
