@@ -98,12 +98,14 @@ def patch_ios():
 
 # ---------------------------------------------------------------- macOS
 
-@step('macOS 沙盒网络权限')
+@step('macOS 沙盒网络权限 + 文件选择权限')
 def patch_macos_entitlements():
     keys = (
         '\t<key>com.apple.security.network.server</key>\n'
         '\t<true/>\n'
         '\t<key>com.apple.security.network.client</key>\n'
+        '\t<true/>\n'
+        '\t<key>com.apple.security.files.user-selected.read-only</key>\n'
         '\t<true/>\n'
     )
     for name in ['DebugProfile.entitlements', 'Release.entitlements']:
@@ -111,9 +113,14 @@ def patch_macos_entitlements():
         m = read(p)
         if m is None:
             raise FileNotFoundError(p)
-        if 'com.apple.security.network.client' in m:
-            continue
-        m = m.replace('</dict>', keys + '</dict>')
+        if 'com.apple.security.network.client' not in m:
+            m = m.replace('</dict>', keys + '</dict>')
+        if 'com.apple.security.files.user-selected.read-only' not in m:
+            m = m.replace(
+                '</dict>',
+                '\t<key>com.apple.security.files.user-selected.read-only</key>\n'
+                '\t<true/>\n</dict>',
+            )
         write(p, m)
 
 

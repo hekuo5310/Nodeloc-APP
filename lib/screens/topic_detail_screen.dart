@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
+import '../api/discourse_api.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../util.dart';
@@ -26,11 +27,17 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
   bool _loading = true;
   bool _loadingMore = false;
   bool _likingBusy = false;
+  bool _bookmarkBusy = false;
   final _scroll = ScrollController();
+  DateTime _openedAt = DateTime.now();
+  int _reportedPosts = 0;
+  DiscourseApi? _apiRef;
 
   @override
   void initState() {
     super.initState();
+    _openedAt = DateTime.now();
+    _apiRef = context.read<AppState>().api;
     _load();
     _scroll.addListener(() {
       final d = _detail;
@@ -46,8 +53,28 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
 
   @override
   void dispose() {
+    _reportTimings();
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// 上报阅读进度（同步已读/未读状态）
+  void _reportTimings() {
+    final d = _detail;
+    final api = _apiRef;
+    if (d == null || api == null || d.posts.isEmpty) return;
+    final totalMs = DateTime.now().difference(_openedAt).inMilliseconds;
+    if (totalMs < 2000) return;
+    final readPosts = d.posts.length - _reportedPosts;
+    if (readPosts <= 0) return;
+    _reportedPosts = d.posts.length;
+    final per = (totalMs / d.posts.length).round().clamp(1000, 60000);
+    final timings = <int, int>{};
+    for (final p in d.posts) {
+      timings[p.postNumber] = per;
+    }
+    // 不依赖 context，静默上报
+    api.postTimings(d.id, totalMs.clamp(0, 3600000), timings);
   }
 
   Future<void> _load() async {
@@ -144,6 +171,47 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     }
   }
 
+  /// 收藏 / 取消收藏（作用于首帖）
+  Future<void> _toggleBookmark() async {
+    final app = context.read<AppState>();
+    final d = _detail;
+    if (d == null || d.posts.isEmpty) return;
+    if (!app.isLoggedIn) {
+      _hint('请先登录');
+      return;
+    }
+    if (_bookmarkBusy) return;
+    setState(() => _bookmarkBusy = true);
+    final first = d.posts.first;
+    try {
+      if (first.bookmarked) {
+        // 无 bookmark_id 时先查收藏列表定位
+        var bid = first.bookmarkId;
+        if (bid == null) {
+          final list = await app.api.bookmarks(app.user!.username);
+          bid = list
+              .firstWhere((b) => b.postId == first.id,
+                  orElse: () => list.firstWhere((b) => b.topicId == d.id))
+              .id;
+        }
+        await app.api.removeBookmark(bid);
+      } else {
+        await app.api.addBookmark(first.id);
+      }
+      if (!mounted) return;
+      final posts = [...d.posts];
+      posts[0] = first.copyWith(
+        bookmarked: !first.bookmarked,
+      );
+      setState(() => _detail = _copyWithPosts(d, posts));
+      _hint(first.bookmarked ? '已取消收藏' : '已收藏');
+    } catch (e) {
+      _hint('收藏操作失败：$e');
+    } finally {
+      if (mounted) setState(() => _bookmarkBusy = false);
+    }
+  }
+
   void _hint(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -180,7 +248,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     final d = _detail;
     if (d == null) return;
     final url =
-        '${context.read<AppState>().baseUrl}/t/${d.slug ?? d.id}/${d.id}/${postNumber}';
+        '${AppState.baseUrl}/t/${d.slug ?? d.id}/${d.id}/${postNumber}';
     Clipboard.setData(ClipboardData(text: url));
     _hint('链接已复制');
   }
@@ -189,7 +257,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     final d = _detail;
     if (d == null) return;
     final url =
-        '${context.read<AppState>().baseUrl}/t/${d.slug ?? 'topic'}/${d.id}';
+        '${AppState.baseUrl}/t/${d.slug ?? 'topic'}/${d.id}';
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
@@ -207,6 +275,25 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
           style: const TextStyle(fontSize: 16.5),
         ),
         actions: [
+          if (d != null && d.posts.isNotEmpty)
+            IconButton(
+              tooltip: d.posts.first.bookmarked ? '取消收藏' : '收藏话题',
+              onPressed: _bookmarkBusy ? null : _toggleBookmark,
+              icon: _bookmarkBusy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      d.posts.first.bookmarked
+                          ? Icons.bookmark
+                          : Icons.bookmark_border,
+                      color: d.posts.first.bookmarked
+                          ? scheme.secondary
+                          : null,
+                    ),
+            ),
           IconButton(
             tooltip: '在浏览器中打开',
             icon: const Icon(Icons.open_in_new),

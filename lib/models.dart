@@ -217,6 +217,8 @@ class Post {
   final bool likedByMe;
   final bool hidden;
   final int? replyToPostNumber;
+  final bool bookmarked;
+  final int? bookmarkId;
 
   Post({
     required this.id,
@@ -231,6 +233,8 @@ class Post {
     this.likedByMe = false,
     this.hidden = false,
     this.replyToPostNumber,
+    this.bookmarked = false,
+    this.bookmarkId,
   });
 
   factory Post.fromJson(dynamic json) {
@@ -255,10 +259,12 @@ class Post {
       likedByMe: liked,
       hidden: toBool(json['hidden']),
       replyToPostNumber: toInt(json['reply_to_post_number']),
+      bookmarked: toBool(json['bookmarked']),
+      bookmarkId: toInt(json['bookmark_id']),
     );
   }
 
-  Post copyWith({int? likeCount, bool? likedByMe}) => Post(
+  Post copyWith({int? likeCount, bool? likedByMe, bool? bookmarked, int? bookmarkId}) => Post(
         id: id,
         postNumber: postNumber,
         topicId: topicId,
@@ -271,6 +277,8 @@ class Post {
         likedByMe: likedByMe ?? this.likedByMe,
         hidden: hidden,
         replyToPostNumber: replyToPostNumber,
+        bookmarked: bookmarked ?? this.bookmarked,
+        bookmarkId: bookmarkId ?? this.bookmarkId,
       );
 }
 
@@ -372,6 +380,7 @@ class CurrentUser {
   final int unreadNotifications;
   final int unreadHighPriority;
   final bool admin;
+  final int unreadPrivateMessages;
 
   CurrentUser({
     required this.id,
@@ -381,6 +390,7 @@ class CurrentUser {
     this.unreadNotifications = 0,
     this.unreadHighPriority = 0,
     this.admin = false,
+    this.unreadPrivateMessages = 0,
   });
 
   factory CurrentUser.fromJson(dynamic json) => CurrentUser(
@@ -391,6 +401,7 @@ class CurrentUser {
         unreadNotifications: toInt(json['unread_notifications']) ?? 0,
         unreadHighPriority: toInt(json['unread_high_priority_notifications']) ?? 0,
         admin: toBool(json['admin']),
+        unreadPrivateMessages: toInt(json['unread_private_messages']) ?? 0,
       );
 
   int get totalUnread => unreadNotifications + unreadHighPriority;
@@ -488,5 +499,38 @@ class SearchResult {
       ));
     }
     return SearchResult(items: items);
+  }
+}
+
+class BookmarkItem {
+  final int id;
+  final int? topicId;
+  final int? postId;
+  final String title;
+  final String excerpt;
+  final DateTime? createdAt;
+  final String? username;
+
+  BookmarkItem({
+    required this.id,
+    this.topicId,
+    this.postId,
+    required this.title,
+    required this.excerpt,
+    this.createdAt,
+    this.username,
+  });
+
+  factory BookmarkItem.fromJson(dynamic json) {
+    final user = json['user'];
+    return BookmarkItem(
+      id: toInt(json['id']) ?? 0,
+      topicId: toInt(json['topic_id']),
+      postId: toInt(json['bookmarkable_id']),
+      title: (json['fancy_title'] ?? json['title'])?.toString() ?? '',
+      excerpt: json['excerpt']?.toString() ?? '',
+      createdAt: toDate(json['created_at']),
+      username: user is Map ? user['username']?.toString() : null,
+    );
   }
 }

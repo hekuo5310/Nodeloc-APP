@@ -62,28 +62,27 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _editBaseUrl() async {
+  /// 浏览器授权登录：支持第三方 OAuth（LinuxDo Connect 等）、邮箱登录链接等全部方式
+  Future<void> _browserLogin() async {
     final app = context.read<AppState>();
-    final ctrl = TextEditingController(text: app.baseUrl);
-    final url = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('站点地址'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'https://www.nodeloc.com'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text('保存')),
-        ],
-      ),
-    );
-    if (url != null && url.trim().isNotEmpty && mounted) {
-      setState(() => _busy = true);
-      await app.setBaseUrl(url);
-      setState(() => _busy = false);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await app.loginViaBrowser(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('欢迎回来，${app.user?.username ?? ''}')),
+        );
+      }
+    } catch (e) {
+      final msg = e.toString();
+      if (msg != '已取消授权' && mounted) {
+        setState(() => _error = '浏览器登录失败：$msg');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -214,29 +213,41 @@ class _LoginScreenState extends State<LoginScreen> {
                                 strokeWidth: 2.2, color: Colors.white))
                         : const Text('登录'),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 14),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('服务器：${app.baseUrl}',
-                          style: TextStyle(
-                              fontSize: 11.5, color: scheme.onSurfaceVariant)),
-                      TextButton(
-                        onPressed: _editBaseUrl,
-                        child: const Text('切换站点', style: TextStyle(fontSize: 11.5)),
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('或',
+                            style: TextStyle(
+                                fontSize: 12, color: scheme.onSurfaceVariant)),
                       ),
+                      const Expanded(child: Divider()),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _browserLogin,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      side: BorderSide(color: scheme.primary.withOpacity(0.5)),
+                      foregroundColor: scheme.primary,
+                    ),
+                    icon: const Icon(Icons.open_in_browser, size: 19),
+                    label: const Text('浏览器授权登录'),
+                  ),
+                  const SizedBox(height: 10),
                   Text(
-                    '登录使用与网页版相同的账号体系（账号密码 / 2FA 动态口令）\n第三方 OAuth 登录请先在网页版完成绑定',
+                    '浏览器授权登录支持第三方账号（LinuxDo Connect 等）、邮箱登录链接、\n'
+                    '2FA 等站点提供的全部登录方式，授权后自动返回本应用',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 11.5,
-                        color: scheme.onSurfaceVariant.withOpacity(0.8),
+                        color: scheme.onSurfaceVariant.withOpacity(0.85),
                         height: 1.6),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   Container(
                     alignment: Alignment.center,
                     padding:

@@ -26,26 +26,33 @@ class UnauthorizedException extends ApiException {
   UnauthorizedException([String message = '未登录或登录已过期']) : super(message, 401);
 }
 
-/// Discourse 用户级 API 客户端（普通账号 Cookie 会话，无需 API Key）
+/// Discourse 用户级 API 客户端
+/// 双模式：Cookie 会话（账号密码登录）或 User-Api-Key（浏览器授权登录）
 class DiscourseApi {
   final String base;
   final Dio _dio;
+  final String? userApiKey;
   String? _csrf;
 
-  DiscourseApi({required this.base, required CookieJar jar})
+  DiscourseApi({required this.base, required CookieJar jar, this.userApiKey})
       : _dio = Dio(BaseOptions(
           baseUrl: base,
           connectTimeout: const Duration(seconds: 20),
           receiveTimeout: const Duration(seconds: 45),
-          headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'User-Agent':
-                'NodelocApp/1.0 (+https://github.com/hekuo5310/Nodeloc-APP)',
-          },
+          headers: _buildHeaders(userApiKey),
           validateStatus: (status) => status != null && status < 500,
         )) {
     _dio.interceptors.add(CookieManager(jar));
+  }
+
+  static Map<String, String> _buildHeaders(String? apiKey) {
+    return {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent':
+          'NodelocApp/1.1 (+https://github.com/hekuo5310/Nodeloc-APP)',
+      if (apiKey != null) 'User-Api-Key': apiKey,
+    };
   }
 
   // ---------------------------------------------------------------- 基础封装
@@ -338,6 +345,99 @@ class DiscourseApi {
   Future<SearchResult> search(String q) async {
     final d = await _getJson('/search.json', query: {'q': q});
     return SearchResult.fromJson(d);
+  }
+
+  // ---------------------------------------------------------------- 私信
+
+  Future<TopicListResult> privateMessages(String username, {int page = 0}) async {
+    final d = await _getJson('/topics/private-messages/$username.json',
+        query: {'page': page});
+    return TopicListResult.fromJson(d);
+  }
+
+  /// 创建私信。注意：Nodeloc 要求 target_usernames 为数组格式（重复键）
+  Future<Map<String, dynamic>> createPrivateMessage({
+    required String title,
+    required String raw,
+    required List<String> targetUsernames,
+  }) =>
+      _mutate('POST', '/posts', data: {
+        'archetype': 'private_message',
+        'title': title,
+        'raw': raw,
+        'target_usernames[]': targetUsernames,
+      });
+
+  // ---------------------------------------------------------------- 收藏
+
+  /// 收藏某楼层（新版 API：bookmarkable_id + bookmarkable_type=Post）
+  Future<int> addBookmark(int postId) async {
+    final d = await _mutate('POST', '/bookmarks', data: {
+      'bookmarkable_id': postId.toString(),
+      'bookmarkable_type': 'Post',
+    });
+    return toInt(d['id']) ?? 0;
+  }
+
+  Future<void> removeBookmark(int bookmarkId) =>
+      _mutate('DELETE', '/bookmarks/$bookmarkId').then((_) {});
+
+  Future<List<BookmarkItem>> bookmarks(String username) async {
+    final d = await _getJson('/u/$username/bookmarks.json');
+    final list =
+        (d['user_bookmark_list'] as Map?)?['bookmarks'] as List? ?? [];
+    return list.map((e) => BookmarkItem.fromJson(e)).toList();
+  }
+
+  // ---------------------------------------------------------------- 阅读进度
+
+  /// 上报阅读时间（同步已读进度 / 新帖未读列表）
+  Future<void> postTimings(int topicId, int totalMs, Map<int, int> postMs) async {
+    final data = <String, dynamic>{
+      'topic_id': topicId.toString(),
+      'topic_time': totalMs.toString(),
+    };
+    postMs.forEach((postNumber, ms) {
+      data['timings[$postNumber]'] = ms.toString();
+    });
+    try {
+      await _mutate('POST', '/topics/timings', data: data);
+    } catch (_) {
+      // 阅读进度失败静默忽略
+    }
+  }
+
+  // ---------------------------------------------------------------- 上传
+
+  /// 上传图片（composer 用途），返回包含 url / short_url 的响应
+  Future<Map<String, dynamic>> uploadImage({
+    required String filePath,
+    required String filename,
+    void Function(int sent, int total)? onProgress,
+  }) async {
+    await ensureCsrf();
+    final form = FormData.fromMap({
+      'type': 'composer',
+      'synchronous': 'true',
+      'files[]': await MultipartFile.fromFile(filePath, filename: filename),
+    });
+    try {
+      final resp = await _dio.post(
+        '/uploads.json',
+        data: form,
+        onSendProgress: onProgress,
+        options: Options(headers: {'X-CSRF-Token': _csrf}),
+      );
+      final map = resp.data is Map
+          ? Map<String, dynamic>.from(resp.data as Map)
+          : <String, dynamic>{};
+      final code = resp.statusCode ?? 500;
+      if (code >= 400) throw ApiException(_errorMessage(map, code), code);
+      return map;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) rethrow;
+      throw _dioError(e);
+    }
   }
 
   // ---------------------------------------------------------------- 工具

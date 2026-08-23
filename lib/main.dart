@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_state.dart';
+import 'desktop_window.dart';
 import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
 import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initDesktopWindow();
   final prefs = await SharedPreferences.getInstance();
   runApp(NodelocApp(prefs: prefs));
 }
@@ -29,6 +31,18 @@ class NodelocApp extends StatelessWidget {
             themeMode: app.themeMode,
             theme: NL.light(),
             darkTheme: NL.dark(),
+            builder: (context, child) {
+              final bar = desktopTitleBar();
+              if (bar == null || child == null) {
+                return child ?? const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  bar,
+                  Expanded(child: child),
+                ],
+              );
+            },
             home: const _Gate(),
           );
         },

@@ -7,6 +7,7 @@ import '../app_state.dart';
 import '../models.dart';
 import '../util.dart';
 import '../widgets/common.dart';
+import 'bookmarks_screen.dart';
 import 'search_screen.dart';
 import 'settings_screen.dart';
 import 'user_topics_screen.dart';
@@ -213,6 +214,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   ListTile(
+                    leading: const Icon(Icons.bookmark_border),
+                    title: const Text('我的收藏'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const BookmarksScreen()),
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
                     leading: const Icon(Icons.search),
                     title: const Text('搜索'),
                     trailing: const Icon(Icons.chevron_right),
@@ -227,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     title: const Text('在浏览器中打开主页'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => launchUrl(
-                      Uri.parse('${app.baseUrl}/u/${user.username}'),
+                      Uri.parse('${AppState.baseUrl}/u/${user.username}'),
                       mode: LaunchMode.externalApplication,
                     ),
                   ),
@@ -261,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Nodeloc App v1.0.0 · 社区开源客户端',
+              'Nodeloc App v1.1.0 · 社区开源客户端',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 11.5, color: scheme.onSurfaceVariant),

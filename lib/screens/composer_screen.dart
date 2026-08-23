@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,16 +6,18 @@ import '../app_state.dart';
 import '../models.dart';
 import 'topic_detail_screen.dart';
 
-/// 发帖 / 回复编辑器
+/// 发帖 / 回复 / 私信编辑器
 class ComposerScreen extends StatefulWidget {
   final bool isNewTopic;
+  final bool isPrivateMessage;
   final int? topicId;
   final int? replyToPostNumber;
   final String? hint;
 
   const ComposerScreen({
     super.key,
-    required this.isNewTopic,
+    this.isNewTopic = false,
+    this.isPrivateMessage = false,
     this.topicId,
     this.replyToPostNumber,
     this.hint,
@@ -28,11 +31,13 @@ class _ComposerScreenState extends State<ComposerScreen> {
   final _titleCtrl = TextEditingController();
   final _contentCtrl = TextEditingController();
   final _contentFocus = FocusNode();
+  final _recipientsCtrl = TextEditingController();
 
   List<Category>? _categories;
   Map<int, String>? _parentNames;
   int? _selectedCategory;
   bool _busy = false;
+  bool _uploading = false;
   String? _error;
 
   @override
@@ -48,13 +53,13 @@ class _ComposerScreenState extends State<ComposerScreen> {
     _titleCtrl.dispose();
     _contentCtrl.dispose();
     _contentFocus.dispose();
+    _recipientsCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _loadCategories() async {
     try {
       final cats = await context.read<AppState>().api.categories();
-      // 只列出子分类（Discourse 顶级分类通常是容器，不允许直接发帖）
       final parents = <int, String>{};
       for (final c in cats) {
         if (c.parentId == null) parents[c.id] = c.name;
@@ -71,9 +76,82 @@ class _ComposerScreenState extends State<ComposerScreen> {
     } catch (_) {}
   }
 
+  /// 选择并上传图片，成功后把 Markdown 插入正文光标处
+  Future<void> _pickAndUploadImage() async {
+    if (_uploading) return;
+    final app = context.read<AppState>();
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      final file = result?.files.single;
+      final path = file?.path;
+      if (file == null || path == null) return;
+
+      setState(() => _uploading = true);
+      final resp = await app.api.uploadImage(
+        filePath: path,
+        filename: file.name,
+        onProgress: (sent, total) {
+          // 进度由 _uploading 状态与 snackbar 提示
+        },
+      );
+      final shortUrl = resp['short_url']?.toString();
+      final url = resp['url']?.toString();
+      if (shortUrl == null && url == null) {
+        throw '上传失败：响应缺少图片地址';
+      }
+      final markdown =
+          '![${file.name}](${shortUrl ?? url})';
+      final sel = _contentCtrl.selection;
+      final text = _contentCtrl.text;
+      final insertPos = sel.isValid ? sel.baseOffset : text.length;
+      final newText = text.replaceRange(
+          insertPos.clamp(0, text.length), insertPos.clamp(0, text.length), markdown);
+      _contentCtrl.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+            offset: (insertPos + markdown.length).clamp(0, newText.length)),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('图片已上传并插入正文')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('图片上传失败：$e')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
   Future<void> _submit() async {
     final title = _titleCtrl.text.trim();
     final raw = _contentCtrl.text.trim();
+    if (widget.isPrivateMessage) {
+      final targets = _recipientsCtrl.text
+          .split(RegExp(r'[,，\s]+'))
+          .where((s) => s.trim().isNotEmpty)
+          .map((s) => s.trim())
+          .toList();
+      if (targets.isEmpty) {
+        setState(() => _error = '请输入收件人用户名（多个用逗号分隔）');
+        return;
+      }
+      if (title.isEmpty) {
+        setState(() => _error = '请输入私信标题');
+        return;
+      }
+      if (raw.isEmpty) {
+        setState(() => _error = '请输入私信内容（支持 Markdown）');
+        return;
+      }
+      await _doSubmit(title: title, raw: raw, targets: targets);
+      return;
+    }
     if (widget.isNewTopic && title.isEmpty) {
       setState(() => _error = '请输入标题');
       return;
@@ -82,6 +160,14 @@ class _ComposerScreenState extends State<ComposerScreen> {
       setState(() => _error = '请输入内容（支持 Markdown）');
       return;
     }
+    await _doSubmit(title: title, raw: raw);
+  }
+
+  Future<void> _doSubmit({
+    required String title,
+    required String raw,
+    List<String>? targets,
+  }) async {
     setState(() {
       _busy = true;
       _error = null;
@@ -89,7 +175,13 @@ class _ComposerScreenState extends State<ComposerScreen> {
     final app = context.read<AppState>();
     try {
       Map<String, dynamic> result;
-      if (widget.isNewTopic) {
+      if (widget.isPrivateMessage) {
+        result = await app.api.createPrivateMessage(
+          title: title,
+          raw: raw,
+          targetUsernames: targets!,
+        );
+      } else if (widget.isNewTopic) {
         result = await app.api.createTopic(
           title: title,
           raw: raw,
@@ -105,7 +197,9 @@ class _ComposerScreenState extends State<ComposerScreen> {
       if (!mounted) return;
       Navigator.pop(context, true);
       final topicId = int.tryParse('${result['topic_id'] ?? widget.topicId}');
-      if (widget.isNewTopic && topicId != null && topicId > 0) {
+      if ((widget.isNewTopic || widget.isPrivateMessage) &&
+          topicId != null &&
+          topicId > 0) {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -125,10 +219,15 @@ class _ComposerScreenState extends State<ComposerScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final title = widget.isPrivateMessage
+        ? '写私信'
+        : widget.isNewTopic
+            ? '发起新话题'
+            : '回复话题';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isNewTopic ? '发起新话题' : '回复话题'),
+        title: Text(title),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -140,7 +239,7 @@ class _ComposerScreenState extends State<ComposerScreen> {
                       height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Text('发布'),
+                  : const Text('发送'),
             ),
           ),
         ],
@@ -167,7 +266,18 @@ class _ComposerScreenState extends State<ComposerScreen> {
                   ),
                   const SizedBox(height: 12),
                 ],
-                if (widget.isNewTopic) ...[
+                if (widget.isPrivateMessage) ...[
+                  TextField(
+                    controller: _recipientsCtrl,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      hintText: '收件人用户名（多个用逗号分隔）',
+                      prefixIcon: Icon(Icons.alternate_email),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (widget.isNewTopic || widget.isPrivateMessage) ...[
                   TextField(
                     controller: _titleCtrl,
                     textInputAction: TextInputAction.next,
@@ -175,6 +285,8 @@ class _ComposerScreenState extends State<ComposerScreen> {
                     decoration: const InputDecoration(hintText: '标题'),
                   ),
                   const SizedBox(height: 12),
+                ],
+                if (widget.isNewTopic) ...[
                   if (_categories != null)
                     DropdownButtonFormField<int>(
                       value: _selectedCategory,
@@ -220,6 +332,31 @@ class _ComposerScreenState extends State<ComposerScreen> {
                     hintText: '正文内容，支持 Markdown 语法…',
                   ),
                   style: const TextStyle(fontSize: 14.5, height: 1.5),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _uploading ? null : _pickAndUploadImage,
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: _uploading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.image_outlined, size: 19),
+                      label: Text(_uploading ? '上传中…' : '插入图片'),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '上传后自动以 Markdown 插入',
+                      style: TextStyle(
+                          fontSize: 11.5, color: scheme.onSurfaceVariant),
+                    ),
+                  ],
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),

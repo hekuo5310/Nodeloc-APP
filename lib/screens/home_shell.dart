@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import 'categories_screen.dart';
+import 'messages_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'topic_list_screen.dart';
@@ -17,14 +18,17 @@ class HomeShell extends StatefulWidget {
 
 class HomeShellState extends State<HomeShell> {
   int _index = 0;
-  final _notificationsKey =
-      GlobalKey<NotificationsScreenState>();
+  final _notificationsKey = GlobalKey<NotificationsScreenState>();
+  final _messagesKey = GlobalKey<MessagesScreenState>();
 
   void _onSelect(int i) {
     setState(() => _index = i);
-    if (i == 2) {
+    if (i == 3) {
       // 打开通知页时刷新未读
       _notificationsKey.currentState?.reload();
+      context.read<AppState>().refreshUser();
+    } else if (i == 2) {
+      _messagesKey.currentState?.reload();
       context.read<AppState>().refreshUser();
     }
   }
@@ -33,11 +37,13 @@ class HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final unread = app.user?.totalUnread ?? 0;
+    final unreadPm = app.user?.unreadPrivateMessages ?? 0;
     final wide = MediaQuery.of(context).size.width >= 820;
 
     final pages = [
       const TopicListScreen(),
       const CategoriesScreen(),
+      MessagesScreen(key: _messagesKey),
       NotificationsScreen(key: _notificationsKey),
       const ProfileScreen(),
     ];
@@ -49,9 +55,7 @@ class HomeShellState extends State<HomeShell> {
             NavigationRail(
               selectedIndex: _index,
               onDestinationSelected: _onSelect,
-              labelType: MediaQuery.of(context).size.width >= 1080
-                  ? NavigationRailLabelType.none
-                  : NavigationRailLabelType.all,
+              labelType: NavigationRailLabelType.all,
               leading: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 child: ClipRRect(
@@ -73,15 +77,20 @@ class HomeShellState extends State<HomeShell> {
                 ),
                 NavigationRailDestination(
                   icon: Badge(
+                    isLabelVisible: unreadPm > 0,
+                    label: Text(unreadPm > 99 ? '99+' : '$unreadPm'),
+                    child: const Icon(Icons.mail_outline),
+                  ),
+                  selectedIcon: const Icon(Icons.mail),
+                  label: const Text('私信'),
+                ),
+                NavigationRailDestination(
+                  icon: Badge(
                     isLabelVisible: unread > 0,
                     label: Text(unread > 99 ? '99+' : '$unread'),
                     child: const Icon(Icons.notifications_outlined),
                   ),
-                  selectedIcon: Badge(
-                    isLabelVisible: unread > 0,
-                    label: Text(unread > 99 ? '99+' : '$unread'),
-                    child: const Icon(Icons.notifications),
-                  ),
+                  selectedIcon: const Icon(Icons.notifications),
                   label: const Text('通知'),
                 ),
                 const NavigationRailDestination(
@@ -116,15 +125,20 @@ class HomeShellState extends State<HomeShell> {
           ),
           NavigationDestination(
             icon: Badge(
+              isLabelVisible: unreadPm > 0,
+              label: Text(unreadPm > 99 ? '99+' : '$unreadPm'),
+              child: const Icon(Icons.mail_outline),
+            ),
+            selectedIcon: const Icon(Icons.mail),
+            label: '私信',
+          ),
+          NavigationDestination(
+            icon: Badge(
               isLabelVisible: unread > 0,
               label: Text(unread > 99 ? '99+' : '$unread'),
               child: const Icon(Icons.notifications_outlined),
             ),
-            selectedIcon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text(unread > 99 ? '99+' : '$unread'),
-              child: const Icon(Icons.notifications),
-            ),
+            selectedIcon: const Icon(Icons.notifications),
             label: '通知',
           ),
           const NavigationDestination(
