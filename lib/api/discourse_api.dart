@@ -304,7 +304,7 @@ class DiscourseApi {
         if (replyToPostNumber != null) 'reply_to_post_number': replyToPostNumber.toString(),
       });
 
-  // ---------------------------------------------------------------- 点赞
+  // ---------------------------------------------------------------- 点赞 / 表情反应
 
   Future<void> likePost(int postId) =>
       _mutate('POST', '/post_actions',
@@ -313,6 +313,15 @@ class DiscourseApi {
 
   Future<void> unlikePost(int postId) => _mutate('DELETE', '/post_actions/$postId',
       query: {'post_action_type_id': '2'}).then((_) {});
+
+  /// 切换帖子表情反应（discourse-reactions 插件）。
+  /// 端点：PUT /discourse-reactions/posts/{id}/custom-reactions/{emoji}/toggle.json
+  /// 返回更新后的 post JSON（含 current_user_reaction / reactions）
+  Future<Map<String, dynamic>> toggleReaction(int postId, String reactionId) =>
+      _mutate(
+        'PUT',
+        '/discourse-reactions/posts/$postId/custom-reactions/$reactionId/toggle.json',
+      );
 
   // ---------------------------------------------------------------- 通知
 

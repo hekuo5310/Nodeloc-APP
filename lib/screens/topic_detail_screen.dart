@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
 import '../api/discourse_api.dart';
 import '../models.dart';
+import '../reactions.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
@@ -138,6 +139,12 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
       );
 
   Future<void> _toggleLike(Post post) async {
+    // 心=等价于 like，走 reactions 接口
+    await _toggleReaction(post, 'heart');
+  }
+
+  /// 切换表情反应（discourse-reactions 插件）
+  Future<void> _toggleReaction(Post post, String reactionId) async {
     final app = context.read<AppState>();
     if (!app.isLoggedIn) {
       _hint('请先登录');
@@ -146,22 +153,14 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     if (_likingBusy) return;
     setState(() => _likingBusy = true);
     try {
-      if (post.likedByMe) {
-        await app.api.unlikePost(post.id);
-      } else {
-        await app.api.likePost(post.id);
-      }
+      final updated = await app.api.toggleReaction(post.id, reactionId);
       final d = _detail;
       if (d == null || !mounted) return;
       final idx = d.posts.indexWhere((p) => p.id == post.id);
       if (idx >= 0) {
-        final updated = d.posts[idx].copyWith(
-          likedByMe: !post.likedByMe,
-          likeCount:
-              post.likeCount + (post.likedByMe ? -1 : 1),
-        );
+        final newPost = Post.fromJson(updated);
         final posts = [...d.posts];
-        posts[idx] = updated;
+        posts[idx] = newPost;
         setState(() => _detail = _copyWithPosts(d, posts));
       }
     } catch (e) {
@@ -210,6 +209,66 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     } finally {
       if (mounted) setState(() => _bookmarkBusy = false);
     }
+  }
+
+  /// 弹出表情反应选择器
+  void _showReactionPicker(Post post) {
+    final app = context.read<AppState>();
+    if (!app.isLoggedIn) {
+      _hint('请先登录');
+      return;
+    }
+    final scheme = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: scheme.surface,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 10),
+                  child: Text(
+                    '选择反应',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    for (final r in kReactions)
+                      _ReactionChip(
+                        emoji: r.emoji,
+                        label: r.label,
+                        count: post.reactions
+                            .firstWhere(
+                              (rr) => rr.id == r.id,
+                              orElse: () => ReactionInfo(id: r.id, count: 0),
+                            )
+                            .count,
+                        highlighted: post.currentUserReaction == r.id,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _toggleReaction(post, r.id);
+                        },
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _hint(String msg) {
@@ -339,6 +398,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                                 post: d.posts.first,
                                 detail: d,
                                 onLike: () => _toggleLike(d.posts.first),
+                                onShowReactions: () => _showReactionPicker(d.posts.first),
                                 onReply: () => _reply(
                                     replyToPostNumber: 1,
                                     hint: '回复 #1 ${d.posts.first.username}'),
@@ -385,6 +445,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                           post: post,
                           detail: d,
                           onLike: () => _toggleLike(post),
+                          onShowReactions: () => _showReactionPicker(post),
                           onReply: () => _reply(
                               replyToPostNumber: post.postNumber,
                               hint: '回复 #${post.postNumber} ${post.username}'),
@@ -451,6 +512,7 @@ class _PostCard extends StatelessWidget {
   final Post post;
   final TopicDetail detail;
   final VoidCallback onLike;
+  final VoidCallback onShowReactions;
   final VoidCallback onReply;
   final VoidCallback onCopyLink;
   final VoidCallback onChanged;
@@ -459,6 +521,7 @@ class _PostCard extends StatelessWidget {
     required this.post,
     required this.detail,
     required this.onLike,
+    required this.onShowReactions,
     required this.onReply,
     required this.onCopyLink,
     required this.onChanged,
@@ -590,24 +653,51 @@ class _PostCard extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                TextButton.icon(
-                  onPressed: onLike,
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor:
-                        post.likedByMe ? NL.love : muted,
-                  ),
-                  icon: Icon(
-                    post.likedByMe ? Icons.favorite : Icons.favorite_outline,
-                    size: 17,
-                    color: post.likedByMe ? NL.love : muted,
-                  ),
-                  label: Text(
-                    post.likeCount > 0 ? '${post.likeCount}' : '赞',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: post.likedByMe ? NL.love : muted,
+                // 表情反应区：单击 toggle 心、长按打开选择器
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onLike,
+                  onLongPress: onShowReactions,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          post.currentUserReaction != null
+                              ? reactionEmoji(post.currentUserReaction)
+                              : '❤',
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          post.reactionUsersCount > 0
+                              ? '${post.reactionUsersCount}'
+                              : '赞',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: post.currentUserReaction != null
+                                ? NL.love
+                                : muted,
+                            fontWeight: post.currentUserReaction != null
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                ),
+                // 小箭头点击展开表情选择器
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onShowReactions,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 6),
+                    child: Icon(Icons.expand_less,
+                        size: 16, color: muted),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -619,6 +709,59 @@ class _PostCard extends StatelessWidget {
                 ),
                 const Spacer(),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 表情反应选择芯片
+class _ReactionChip extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final int count;
+  final bool highlighted;
+  final VoidCallback onTap;
+
+  const _ReactionChip({
+    required this.emoji,
+    required this.label,
+    required this.count,
+    required this.highlighted,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: highlighted
+              ? NL.love.withOpacity(0.18)
+              : scheme.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: highlighted
+              ? Border.all(color: NL.love.withOpacity(0.5), width: 1.4)
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 26)),
+            const SizedBox(height: 3),
+            Text(
+              count > 0 ? '$count' : label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: highlighted ? NL.love : scheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

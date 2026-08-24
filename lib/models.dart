@@ -204,6 +204,16 @@ class Category {
       .trim();
 }
 
+class ReactionInfo {
+  final String id;
+  final int count;
+  ReactionInfo({required this.id, required this.count});
+  factory ReactionInfo.fromJson(dynamic json) => ReactionInfo(
+    id: json['id']?.toString() ?? '',
+    count: toInt(json['count']) ?? 0,
+  );
+}
+
 class Post {
   final int id;
   final int postNumber;
@@ -219,6 +229,9 @@ class Post {
   final int? replyToPostNumber;
   final bool bookmarked;
   final int? bookmarkId;
+  final List<ReactionInfo> reactions;
+  final String? currentUserReaction;
+  final int reactionUsersCount;
 
   Post({
     required this.id,
@@ -235,6 +248,9 @@ class Post {
     this.replyToPostNumber,
     this.bookmarked = false,
     this.bookmarkId,
+    this.reactions = const [],
+    this.currentUserReaction,
+    this.reactionUsersCount = 0,
   });
 
   factory Post.fromJson(dynamic json) {
@@ -261,10 +277,23 @@ class Post {
       replyToPostNumber: toInt(json['reply_to_post_number']),
       bookmarked: toBool(json['bookmarked']),
       bookmarkId: toInt(json['bookmark_id']),
+      reactions: ((json['reactions'] as List?) ?? [])
+          .map((e) => ReactionInfo.fromJson(e))
+          .toList(),
+      currentUserReaction: json['current_user_reaction']?.toString(),
+      reactionUsersCount: toInt(json['reaction_users_count']) ?? 0,
     );
   }
 
-  Post copyWith({int? likeCount, bool? likedByMe, bool? bookmarked, int? bookmarkId}) => Post(
+  Post copyWith({
+    int? likeCount,
+    bool? likedByMe,
+    bool? bookmarked,
+    int? bookmarkId,
+    List<ReactionInfo>? reactions,
+    String? currentUserReaction,
+    int? reactionUsersCount,
+  }) => Post(
         id: id,
         postNumber: postNumber,
         topicId: topicId,
@@ -279,6 +308,9 @@ class Post {
         replyToPostNumber: replyToPostNumber,
         bookmarked: bookmarked ?? this.bookmarked,
         bookmarkId: bookmarkId ?? this.bookmarkId,
+        reactions: reactions ?? this.reactions,
+        currentUserReaction: currentUserReaction ?? this.currentUserReaction,
+        reactionUsersCount: reactionUsersCount ?? this.reactionUsersCount,
       );
 }
 

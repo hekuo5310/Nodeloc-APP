@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../theme.dart';
+import '../update_checker.dart';
 
 /// 设置页
 class SettingsScreen extends StatefulWidget {
@@ -14,6 +15,73 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool _checking = false;
+
+  Future<void> _checkUpdate() async {
+    setState(() => _checking = true);
+    final app = context.read<AppState>();
+    await app.checkForUpdate(force: true);
+    if (!mounted) return;
+    setState(() => _checking = false);
+    final info = app.updateInfo;
+    if (info == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('当前已是最新版本 v$kAppVersion')),
+      );
+    } else {
+      _showUpdateDialog(app, info);
+    }
+  }
+
+  void _showUpdateDialog(AppState app, UpdateInfo info) {
+    final scheme = Theme.of(context).colorScheme;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('发现新版本 v${info.version}'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('当前版本：v$kAppVersion',
+                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    info.releaseNotes.isEmpty ? '（暂无更新说明）' : info.releaseNotes,
+                    style: const TextStyle(fontSize: 12.5, height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('稍后再说'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              app.openUpdateDownload();
+            },
+            icon: const Icon(Icons.download_outlined, size: 18),
+            label: const Text('立即下载'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
@@ -24,6 +92,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(10),
         children: [
+          Card(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: _checking
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.system_update_outlined),
+                  title: const Text('检查更新'),
+                  subtitle: Text(
+                    app.updateInfo != null
+                        ? '新版本 v${app.updateInfo!.version} 可用'
+                        : '当前版本 v$kAppVersion',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  trailing: app.updateInfo != null
+                      ? FilledButton(
+                          onPressed: () => _showUpdateDialog(app, app.updateInfo!),
+                          child: const Text('更新'),
+                        )
+                      : const Icon(Icons.chevron_right),
+                  onTap: _checking ? null : _checkUpdate,
+                ),
+              ],
+            ),
+          ),
           Card(
             margin: const EdgeInsets.symmetric(vertical: 5),
             child: Padding(
@@ -138,10 +236,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'NodeLoc 社区开源客户端 v1.1.0\n'
+                    'NodeLoc 社区开源客户端 v$kAppVersion\n'
                     '基于 Flutter 构建，覆盖 Android / iOS / Windows / macOS / Linux\n'
                     '支持账号密码 + 2FA 登录与浏览器授权登录（第三方账号 / 邮箱登录链接），\n'
-                    '凭据仅保存在本机；浏览、发帖、回复、点赞、私信、收藏、图片上传等\n'
+                    '凭据仅保存在本机；浏览、发帖、回复、表情反应、私信、收藏、图片上传等\n'
                     '功能均通过官方用户级接口完成',
                     style: TextStyle(
                         fontSize: 12.5,

@@ -1,7 +1,7 @@
 name: nodeloc_app
 description: "NodeLoc 社区全平台客户端（Android / iOS / Windows / macOS / Linux）"
 publish_to: "none"
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

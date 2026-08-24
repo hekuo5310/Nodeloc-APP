@@ -8,6 +8,7 @@ import 'api/discourse_api.dart';
 import 'models.dart';
 import 'oauth/rsa.dart';
 import 'oauth/webview_login.dart';
+import 'update_checker.dart';
 
 /// 全局应用状态：会话 + 外观
 class AppState extends ChangeNotifier {
@@ -30,6 +31,9 @@ class AppState extends ChangeNotifier {
   bool get isLoggedIn => user != null;
   DiscourseApi get api => _api ?? (throw StateError('API 未初始化'));
 
+  UpdateInfo? updateInfo;
+  bool _updateChecked = false;
+
   Future<void> _init() async {
     final tm = prefs.getString('theme_mode') ?? 'dark';
     themeMode = switch (tm) {
@@ -45,6 +49,8 @@ class AppState extends ChangeNotifier {
     await refreshUser();
     initialized = true;
     notifyListeners();
+    // 后台检查更新（不阻塞初始化）
+    checkForUpdate();
   }
 
   Future<void> _createApi() async {
@@ -164,4 +170,31 @@ class AppState extends ChangeNotifier {
 
   String? avatarUrl(String? template, {int size = 96}) =>
       _api?.resolveAvatarUrl(template, size: size);
+
+  /// 检查 GitHub 最新 Release 是否有新版本；有则置 updateInfo 并通知
+  Future<void> checkForUpdate({bool force = false}) async {
+    if (_updateChecked && !force) return;
+    _updateChecked = true;
+    final info = await UpdateChecker.fetchLatest();
+    if (info != null && info.isNewer && updateInfo == null) {
+      updateInfo = info;
+      notifyListeners();
+    } else if (info != null && !info.isNewer) {
+      updateInfo = null;
+      notifyListeners();
+    }
+  }
+
+  /// 打开下载页（用户点击更新横幅/对话框时调用）
+  Future<void> openUpdateDownload() async {
+    final info = updateInfo;
+    if (info == null) return;
+    await UpdateChecker.openDownload(info);
+  }
+
+  /// 清除更新提示（用户选择“以后再说”）
+  void dismissUpdate() {
+    updateInfo = null;
+    notifyListeners();
+  }
 }

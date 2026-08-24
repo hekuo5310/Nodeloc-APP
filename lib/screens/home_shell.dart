@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
+import '../update_checker.dart';
 import 'categories_screen.dart';
 import 'messages_screen.dart';
 import 'notifications_screen.dart';
@@ -47,6 +48,46 @@ class HomeShellState extends State<HomeShell> {
       NotificationsScreen(key: _notificationsKey),
       const ProfileScreen(),
     ];
+
+    final updateBanner = app.updateInfo != null
+        ? Material(
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.16),
+            child: InkWell(
+              onTap: () => _showUpdateDialog(context, app),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.system_update,
+                        size: 18, color: Theme.of(context).colorScheme.secondary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '发现新版本 v${app.updateInfo!.version}，点击查看',
+                        style: TextStyle(
+                            fontSize: 12.5,
+                            color: Theme.of(context).colorScheme.onSurface),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => app.dismissUpdate(),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: const Size(36, 28),
+                      ),
+                      child: const Text('以后再说', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        : null;
+
+    Widget body = IndexedStack(index: _index, children: pages);
 
     if (wide) {
       return Scaffold(
@@ -101,14 +142,26 @@ class HomeShellState extends State<HomeShell> {
               ],
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: IndexedStack(index: _index, children: pages)),
+            Expanded(
+              child: Column(
+                children: [
+                  if (updateBanner != null) updateBanner,
+                  Expanded(child: body),
+                ],
+              ),
+            ),
           ],
         ),
       );
     }
 
     return Scaffold(
-      body: IndexedStack(index: _index, children: pages),
+      body: Column(
+        children: [
+          if (updateBanner != null) updateBanner,
+          Expanded(child: body),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _onSelect,
@@ -145,6 +198,60 @@ class HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: '我的',
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUpdateDialog(BuildContext context, AppState app) {
+    final info = app.updateInfo!;
+    final scheme = Theme.of(context).colorScheme;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('发现新版本 v${info.version}'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('当前版本：v$kAppVersion',
+                    style:
+                        TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    info.releaseNotes.isEmpty ? '（暂无更新说明）' : info.releaseNotes,
+                    style: const TextStyle(fontSize: 12.5, height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              app.dismissUpdate();
+              Navigator.pop(ctx);
+            },
+            child: const Text('以后再说'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              app.openUpdateDownload();
+            },
+            icon: const Icon(Icons.download_outlined, size: 18),
+            label: const Text('立即下载'),
           ),
         ],
       ),
