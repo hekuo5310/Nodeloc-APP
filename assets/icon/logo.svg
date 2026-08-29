@@ -1,19 +1,7 @@
-<?xml version="1.0"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="280" viewBox="0 0 960 280" role="img" aria-label="nodeloc">
-  
-  <g transform="translate(30,0)" fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <g stroke="#009966">
-      <path d="M0,222 L0,172 A50,50 0 0 1 100,172 L100,222"/>
-      <circle cx="200" cy="172" r="50"/>
-      <circle cx="350" cy="172" r="50"/>
-      <path d="M400,58 L400,222"/>
-      <path d="M450,172 L550,172"/>
-      <path d="M550,172 A50,50 0 1 0 541,201"/>
-    </g>
-    <g stroke="#FF9933">
-      <path d="M600,58 L600,222"/>
-      <circle cx="700" cy="172" r="50"/>
-      <path d="M891,143 A50,50 0 1 0 891,201"/>
-    </g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="300" viewBox="0 0 1080 300">
+  <g fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#009966"><path d="M38,110 L62,34 L118,78 Z" /><path d="M562,110 L598,34 L644,78 Z" /><path d="M30,242 L30,192 A50,50 0 0 1 130,192 L130,242" /><path d="M180,192 L280,192" /><path d="M280,192 A50,50 0 1 0 271,221" /><path d="M380,78 L380,242" /><path d="M490,125 L385,183 L490,242" /><circle cx="590" cy="192" r="50" /></g>
+    <g stroke="#FF9933"><path d="M690,78 L690,242" /><circle cx="800" cy="192" r="50" /><path d="M941,163 A50,50 0 1 0 941,221" /><path d="M958,248 C1012,272 1044,214 1010,170 C988,140 1000,112 1028,118" /></g>
   </g>
 </svg>

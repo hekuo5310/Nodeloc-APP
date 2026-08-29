@@ -1,12 +1,12 @@
-# NodeLoc APP
+# Nekoloc
 
 [![Build Apps](https://github.com/hekuo5310/Nodeloc-APP/actions/workflows/build.yml/badge.svg)](https://github.com/hekuo5310/Nodeloc-APP/actions/workflows/build.yml)
 
-[NodeLoc](https://www.nodeloc.com)（自由、平等、友好、开放、有趣的互联网交流社区）的**全平台开源客户端**，基于 Flutter 构建，一套代码覆盖 **Android / iOS / Windows / macOS / Linux**。
+**Nekoloc**（neko（猫） + loc（NodeLoc））是 [NodeLoc](https://www.nodeloc.com)（自由、平等、友好、开放、有趣的互联网交流社区）的**第三方开源猫咪主题客户端**，基于 Flutter 构建，一套代码覆盖 **Android / iOS / Windows / macOS / Linux**。
 
-界面遵循 NodeLoc 官方品牌风格：暖黑背景 + 松石绿 / 橘橙双色主色调（提取自官网主题配色方案）。
+界面遵循 NodeLoc 官方品牌风格：暖黑背景 + 松石绿 / 橘橙双色主色调（提取自官网主题配色方案），并在品牌设计中融入猫元素：猫耳字标、甩尾加载动画与猫爪空态。
 
-> 本项目为社区驱动的非官方客户端，站点地址固定为 `https://www.nodeloc.com`，与 NodeLoc 官方无关。
+> 本项目为社区驱动的非官方第三方客户端，站点地址固定为 `https://www.nodeloc.com`，与 NodeLoc 官方无关。
 
 ## 功能
 
@@ -16,7 +16,7 @@
   - 凭据仅保存在设备本地，不上传任何第三方服务器
 - **话题流**：最新 / 热门 / 新帖 / 未读，下拉刷新 + 无限滚动
 - **分类浏览**：分类与子分类，点击进入分类话题列表
-- **话题详情**：Discourse 原生 HTML 富文本渲染（引用块、代码块、图片、链接等），楼层分页加载
+- **话题详情**：Discourse 原生 HTML 富文本渲染（引用块、代码块、图片、链接等），楼层分页加载；**图片全屏查看器**（双指缩放 / 双击缩放 / 多图左右切换 / 页码指示）
 - **互动**：表情反应（红心 / 赞同 / 哈哈 / 惊讶 / 庆祝 五种表情，长按点赞按钮或点击小箭头展开选择器），回复楼层，发起新话题（Markdown）
 - **图片上传**：编辑器中选择本地图片，上传后自动以 Markdown 语法插入正文
 - **私信**：会话列表、新建私信（多收件人）、回复私信
@@ -27,7 +27,8 @@
 - **搜索**：全文搜索
 - **自适应布局**：手机端底部导航栏，桌面端侧边导航栏
 - **桌面体验**：Windows / macOS 自定义标题栏（拖拽移动、最小化 / 最大化 / 关闭），默认窗口尺寸与居中
-- **品牌加载动画**："nodeloc" 字标逐笔写出的描边动画（3.5s 循环），取代全局所有整页加载占位、启动页与列表加载更多状态
+- **品牌加载动画**：猫耳立起 → "nekoloc" 字标逐笔写出 → 甩尾的描边动画（3.5s 循环），取代全局所有整页加载占位、启动页与列表加载更多状态；启动页首次加载完整播完一轮动画再进入应用
+- **猫咪元素彩蛋**：空态默认猫爪图标，设置页关于标题连点 5 次有惊喜
 - **自动更新检查**：启动时后台检查 GitHub Releases，发现新版本在首页顶部展示横幅并打开对应平台安装包下载
 
 ## 下载安装
@@ -39,8 +40,8 @@
 | 产物 | 平台 | 说明 |
 |---|---|---|
 | `nodeloc-android` | Android | 通用 APK、按 ABI 拆分的 APK、AAB |
-| `nodeloc-linux` | Linux x64 | tar.gz（解压后运行 `bundle/Nodeloc`） |
-| `nodeloc-windows` | Windows x64 | zip（解压后运行 `Nodeloc.exe`） |
+| `nodeloc-linux` | Linux x64 | tar.gz（解压后运行 `bundle/Nekoloc`） |
+| `nodeloc-windows` | Windows x64 | zip（解压后运行 `Nekoloc.exe`） |
 | `nodeloc-macos` | macOS (Apple Silicon) | zip（含 .app） |
 | `nodeloc-ios` | iOS | **未签名** IPA，需自签后安装 |
 
@@ -57,7 +58,7 @@ git push origin v1.2.1
 
 - **Android**：直接安装 APK（universal 版兼容所有架构；arm64 版体积更小）。AAB 仅供上架 Google Play 使用
 - **iOS**：CI 产出的 IPA 未签名（苹果要求付费开发者账号）。可通过 [AltStore](https://altstore.io)、[Sideloadly](https://sideloadly.io)、爱思助手等工具自签安装，或 fork 后用个人证书在 Xcode 中直接构建
-- **macOS**：首次打开若被 Gatekeeper 拦截，在终端执行 `xattr -cr /Applications/Nodeloc.app`，或到「系统设置 - 隐私与安全性」点击「仍要打开」
+- **macOS**：首次打开若被 Gatekeeper 拦截，在终端执行 `xattr -cr /Applications/Nekoloc.app`，或到「系统设置 - 隐私与安全性」点击「仍要打开」
 - **Linux**：需要 GTK3 与 webkit2gtk 运行库（主流发行版自带；Arch 系执行 `sudo pacman -S gtk3 webkit2gtk-4.1`，Debian 系执行 `sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0`）
 - **Windows**：内置浏览器登录需要 WebView2 运行时（Windows 10 / 11 一般已预装，缺失时可在微软官网安装）
 

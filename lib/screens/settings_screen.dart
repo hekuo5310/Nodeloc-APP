@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
 import '../theme.dart';
 import '../update_checker.dart';
+import '../widgets/common.dart';
 
 /// 设置页
 class SettingsScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _checking = false;
+  int _pawTaps = 0; // 猫咪彩蛋计数器
 
   Future<void> _checkUpdate() async {
     setState(() => _checking = true);
@@ -80,6 +82,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// 彩蛋：关于标题连点 5 次 -> 猫咪打招呼
+  void _onPawTap() {
+    _pawTaps++;
+    if (_pawTaps >= 5) {
+      _pawTaps = 0;
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.6, end: 1.0),
+                duration: const Duration(milliseconds: 380),
+                curve: Curves.elasticOut,
+                builder: (_, s, child) =>
+                    Transform.scale(scale: s, child: child),
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: NL.greenDark.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.pets,
+                      size: 46, color: NL.greenDark),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('喵~ 你找到我啦！',
+                  style: TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(
+                'Nekoloc = neko（猫）+ loc（NodeLoc）\n'
+                '一只爱逛 NodeLoc 的第三方猫咪客户端 v$kAppVersion',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.6,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('喵！'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -210,38 +267,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: NL.greenDark,
-                          borderRadius: BorderRadius.circular(3),
+                  GestureDetector(
+                    onTap: _onPawTap,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: NL.greenDark,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: NL.orangeDark,
-                          borderRadius: BorderRadius.circular(3),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: NL.orangeDark,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('关于',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w700)),
-                    ],
+                        const SizedBox(width: 8),
+                        const Text('关于',
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
+                  const Center(child: NekolocLoading(width: 170)),
+                  const SizedBox(height: 10),
                   Text(
-                    'NodeLoc 社区开源客户端 v$kAppVersion\n'
+                    'Nekoloc v$kAppVersion —— NodeLoc 社区第三方开源猫咪客户端\n'
                     '基于 Flutter 构建，覆盖 Android / iOS / Windows / macOS / Linux\n'
                     '支持账号密码 + 2FA 登录与浏览器授权登录（第三方账号 / 邮箱登录链接），\n'
                     '凭据仅保存在本机；浏览、发帖、回复、表情反应、私信、收藏、图片上传等\n'
-                    '功能均通过官方用户级接口完成',
+                    '功能均通过官方用户级接口完成。本客户端与 NodeLoc 官方无关',
                     style: TextStyle(
                         fontSize: 12.5,
                         height: 1.7,

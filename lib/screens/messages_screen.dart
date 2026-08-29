@@ -156,7 +156,7 @@ class MessagesScreenState extends State<MessagesScreen>
                             const Divider(height: 1, indent: 66, endIndent: 12),
                         itemBuilder: (context, i) {
                           if (i >= _topics.length) {
-                            return const NodelocLoadingFooter();
+                            return const NekolocLoadingFooter();
                           }
                           final t = _topics[i];
                           final latest = t.posters.isNotEmpty

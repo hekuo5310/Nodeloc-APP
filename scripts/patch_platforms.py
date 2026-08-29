@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Nodeloc App 平台补丁脚本（在 CI 中 `flutter create .` 生成平台目录后运行）：
+Nekoloc 平台补丁脚本（在 CI 中 `flutter create .` 生成平台目录后运行）：
 - Android: INTERNET 权限、应用名称、图标
 - iOS:     显示名称、Bundle ID、图标
 - macOS:   网络权限（沙盒）、产品名称、图标
@@ -20,7 +20,7 @@ for _stream in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-APP_LABEL = 'Nodeloc'
+APP_LABEL = 'Nekoloc'
 PROJECT_NAME = 'nodeloc_app'
 BUNDLE_ID = 'com.nodeloc.app'
 
@@ -158,7 +158,7 @@ def patch_macos_config():
     )
     m = re.sub(
         r'(?m)^PRODUCT_COPYRIGHT\s*=.*$',
-        'PRODUCT_COPYRIGHT = Copyright (c) 2026 Nodeloc App Contributors.',
+        'PRODUCT_COPYRIGHT = Copyright (c) 2026 Nekoloc Contributors.',
         m,
     )
     write(p, m)

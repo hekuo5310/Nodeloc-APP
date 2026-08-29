@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -11,7 +12,16 @@ import '../reactions.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
+import '../widgets/image_viewer.dart';
 import 'composer_screen.dart';
+
+/// 提取 HTML 中所有 http(s) 图片地址（供全屏查看器翻页）
+List<String> _extractImages(String cookedHtml) {
+  return RegExp(r'<img\b[^>]*\bsrc="(https?://[^"]+)"', caseSensitive: false)
+      .allMatches(cookedHtml)
+      .map((m) => m.group(1)!)
+      .toList();
+}
 
 /// 话题详情：楼层列表 + 点赞 + 回复
 class TopicDetailScreen extends StatefulWidget {
@@ -414,7 +424,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               child: Center(
                                 child: _loadingMore
-                                    ? const NodelocLoadingFooter()
+                                    ? const NekolocLoadingFooter()
                                     : TextButton.icon(
                                         onPressed: _loadMore,
                                         icon: const Icon(Icons.expand_more,
@@ -549,6 +559,36 @@ class _PostCard extends StatelessWidget {
                 await _openAvatarLink(url);
               }
               return true;
+            },
+            // 图片：点击进入全屏查看器（缩放 / 双击 / 多图翻页）
+            customWidgetBuilder: (element) {
+              if (element.localName != 'img') return null;
+              final src = element.attributes['src'] ?? '';
+              if (!src.startsWith('http')) return null;
+              final images = _extractImages(post.cooked);
+              final index = images.indexOf(src);
+              return GestureDetector(
+                onTap: () => ImageViewer.show(
+                  context,
+                  urls: images,
+                  initialIndex: index < 0 ? 0 : index,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    imageUrl: src,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => const SizedBox(
+                      height: 120,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (_, __, ___) => const SizedBox(
+                      height: 120,
+                      child: Icon(Icons.broken_image_outlined),
+                    ),
+                  ),
+                ),
+              );
             },
             customStylesBuilder: (element) {
               switch (element.localName) {

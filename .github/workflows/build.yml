@@ -53,11 +53,11 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/Nodeloc-Android-universal.apk
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist/Nodeloc-Android-arm64.apk
-          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist/Nodeloc-Android-armv7.apk
-          cp build/app/outputs/flutter-apk/app-x86_64-release.apk dist/Nodeloc-Android-x64.apk
-          cp build/app/outputs/bundle/release/app-release.aab dist/Nodeloc-Android-playstore.aab
+          cp build/app/outputs/flutter-apk/app-release.apk dist/Nekoloc-Android-universal.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist/Nekoloc-Android-arm64.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist/Nekoloc-Android-armv7.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk dist/Nekoloc-Android-x64.apk
+          cp build/app/outputs/bundle/release/app-release.aab dist/Nekoloc-Android-playstore.aab
 
       - uses: actions/upload-artifact@v4
         with:

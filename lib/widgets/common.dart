@@ -6,9 +6,9 @@ import '../app_state.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../util.dart';
-import 'nodeloc_loading.dart';
+import 'nekoloc_loading.dart';
 
-export 'nodeloc_loading.dart';
+export 'nekoloc_loading.dart';
 
 /// 用户头像（带首字母回退）
 class UserAvatar extends StatelessWidget {
@@ -269,11 +269,11 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// 空态视图
+/// 空态视图（默认猫爪图标 —— Nekoloc 猫咪元素）
 class EmptyView extends StatelessWidget {
   final String text;
   final IconData icon;
-  const EmptyView({super.key, required this.text, this.icon = Icons.inbox_outlined});
+  const EmptyView({super.key, required this.text, this.icon = Icons.pets});
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +290,7 @@ class EmptyView extends StatelessWidget {
   }
 }
 
-/// 加载指示器 —— Nodeloc 品牌动画（"nodeloc" 字标逐笔写出）
+/// 加载指示器 —— Nekoloc 品牌动画（猫耳 + "nekoloc" 字标逐笔写出 + 甩尾）
 class LoadingView extends StatelessWidget {
   /// 动画显示宽度；默认 220
   final double width;
@@ -299,6 +299,6 @@ class LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NodelocLoadingCenter(width: width);
+    return NekolocLoadingCenter(width: width);
   }
 }

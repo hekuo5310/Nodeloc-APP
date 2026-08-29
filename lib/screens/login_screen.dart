@@ -118,6 +118,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text('Nekoloc',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                  color: scheme.primary)),
+                          const SizedBox(height: 2),
                           Text(siteTitle,
                               style: const TextStyle(
                                   fontSize: 26, fontWeight: FontWeight.w800)),
@@ -257,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '本客户端为社区开源项目，与 NodeLoc 官方无关',
+                      'Nekoloc 为社区第三方开源客户端，与 NodeLoc 官方无关',
                       style: TextStyle(
                           fontSize: 11, color: scheme.onSurfaceVariant),
                     ),

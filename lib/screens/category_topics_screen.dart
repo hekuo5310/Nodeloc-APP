@@ -117,7 +117,7 @@ class _CategoryTopicsScreenState extends State<CategoryTopicsScreen> {
                     itemCount: _topics.length + (_hasMore ? 1 : 0),
                     itemBuilder: (context, i) {
                       if (i >= _topics.length) {
-                        return const NodelocLoadingFooter();
+                        return const NekolocLoadingFooter();
                       }
                       final t = _topics[i];
                       return TopicTile(
