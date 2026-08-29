@@ -307,7 +307,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     final d = _detail;
     if (d == null) return;
     final url =
-        '${AppState.baseUrl}/t/${d.slug ?? d.id}/${d.id}/${postNumber}';
+        '${AppState.baseUrl}/t/${d.slug ?? d.id}/${d.id}/$postNumber';
     Clipboard.setData(ClipboardData(text: url));
     _hint('链接已复制');
   }
@@ -414,11 +414,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               child: Center(
                                 child: _loadingMore
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2.2))
+                                    ? const NodelocLoadingFooter()
                                     : TextButton.icon(
                                         onPressed: _loadMore,
                                         icon: const Icon(Icons.expand_more,

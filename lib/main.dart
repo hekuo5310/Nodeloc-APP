@@ -7,6 +7,7 @@ import 'desktop_window.dart';
 import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
 import 'theme.dart';
+import 'widgets/nodeloc_loading.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,27 +73,10 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: Image.asset(
-                'assets/icon/app_icon.png',
-                width: 96,
-                height: 96,
-              ),
-            ),
-            const SizedBox(height: 24),
-            const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
-            ),
-          ],
-        ),
+        // 品牌字标逐笔写出的加载动画，取代旧版"图标 + 菊花"
+        child: NodelocLoading(width: 260),
       ),
     );
   }

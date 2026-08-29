@@ -70,7 +70,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                             physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: _items!.length,
                             separatorBuilder: (_, __) =>
-                                Divider(height: 1, indent: 16, endIndent: 16),
+                                const Divider(height: 1, indent: 16, endIndent: 16),
                             itemBuilder: (context, i) {
                               final b = _items![i];
                               return ListTile(

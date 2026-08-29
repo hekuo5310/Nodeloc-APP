@@ -155,7 +155,7 @@ class NotificationsScreenState extends State<NotificationsScreen>
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: _items!.length,
                         separatorBuilder: (_, __) =>
-                            Divider(height: 1, indent: 62, endIndent: 12),
+                            const Divider(height: 1, indent: 62, endIndent: 12),
                         itemBuilder: (context, i) {
                           final n = _items![i];
                           return ListTile(

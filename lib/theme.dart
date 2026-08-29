@@ -27,7 +27,7 @@ class NL {
   static const Color lightTextMuted = Color(0xFF777269);
 
   static ThemeData dark() {
-    final scheme = ColorScheme.dark(
+    const scheme = ColorScheme.dark(
       primary: greenDark,
       onPrimary: Colors.white,
       secondary: orangeDark,
@@ -75,7 +75,7 @@ class NL {
   }
 
   static ThemeData light() {
-    final scheme = ColorScheme.light(
+    const scheme = ColorScheme.light(
       primary: greenLight,
       onPrimary: Colors.white,
       secondary: orangeLight,

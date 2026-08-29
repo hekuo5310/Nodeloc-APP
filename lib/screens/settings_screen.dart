@@ -192,7 +192,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.public),
                   title: const Text('NodeLoc 网站'),
-                  subtitle: Text(AppState.baseUrl, style: const TextStyle(fontSize: 12)),
+                  subtitle: const Text(AppState.baseUrl,
+                      style: TextStyle(fontSize: 12)),
                   trailing: const Icon(Icons.open_in_new, size: 18),
                   onTap: () => launchUrl(
                     Uri.parse(AppState.baseUrl),

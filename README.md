@@ -27,6 +27,7 @@
 - **搜索**：全文搜索
 - **自适应布局**：手机端底部导航栏，桌面端侧边导航栏
 - **桌面体验**：Windows / macOS 自定义标题栏（拖拽移动、最小化 / 最大化 / 关闭），默认窗口尺寸与居中
+- **品牌加载动画**："nodeloc" 字标逐笔写出的描边动画（3.5s 循环），取代全局所有整页加载占位、启动页与列表加载更多状态
 - **自动更新检查**：启动时后台检查 GitHub Releases，发现新版本在首页顶部展示横幅并打开对应平台安装包下载
 
 ## 下载安装
@@ -45,11 +46,11 @@
 
 ### 方式二：Releases（正式版本）
 
-推送 `v*` 标签（如 `v1.2.0`）后，CI 会自动构建全部平台并发布到 [Releases](https://github.com/hekuo5310/Nodeloc-APP/releases)：
+推送 `v*` 标签（如 `v1.2.1`）后，CI 会自动构建全部平台并发布到 [Releases](https://github.com/hekuo5310/Nodeloc-APP/releases)：
 
 ```bash
-git tag v1.2.0
-git push origin v1.2.0
+git tag v1.2.1
+git push origin v1.2.1
 ```
 
 ### 各平台注意事项
@@ -94,7 +95,9 @@ Linux 构建另需：`sudo apt install cmake ninja-build libgtk-3-dev libwebkit2
 
 ```
 ├── .github/workflows/build.yml   # 五平台自动编译 + tag 自动发版
-├── assets/icon/                  # 图标与原始 SVG 字标
+├── assets/
+│   ├── icon/                  # 图标与原始 SVG 字标
+│   └── animations/             # 品牌加载动画（animated WebP）
 ├── scripts/
 │   ├── patch_platforms.py        # 平台工程补丁（权限/名称/图标）
 │   └── make_icon.py              # 图标生成（渐变底 + 白色字标）
@@ -105,6 +108,9 @@ Linux 构建另需：`sudo apt install cmake ninja-build libgtk-3-dev libwebkit2
 │   ├── theme.dart                # NodeLoc 品牌主题
 │   ├── oauth/                    # RSA 工具 + 内置浏览器授权登录
 │   ├── desktop_window.dart       # 桌面窗口与自定义标题栏
+│   ├── update_checker.dart       # GitHub Releases 更新检查
+│   ├── reactions.dart            # 表情反应定义（discourse-reactions）
+│   ├── widgets/                  # 通用组件（含品牌加载动画）
 │   └── screens/                  # 各界面
 └── pubspec.yaml
 ```

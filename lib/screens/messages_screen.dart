@@ -153,20 +153,10 @@ class MessagesScreenState extends State<MessagesScreen>
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: _topics.length + (_hasMore ? 1 : 0),
                         separatorBuilder: (_, __) =>
-                            Divider(height: 1, indent: 66, endIndent: 12),
+                            const Divider(height: 1, indent: 66, endIndent: 12),
                         itemBuilder: (context, i) {
                           if (i >= _topics.length) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 18),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2.2),
-                                ),
-                              ),
-                            );
+                            return const NodelocLoadingFooter();
                           }
                           final t = _topics[i];
                           final latest = t.posters.isNotEmpty

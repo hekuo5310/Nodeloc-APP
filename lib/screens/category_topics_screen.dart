@@ -117,17 +117,7 @@ class _CategoryTopicsScreenState extends State<CategoryTopicsScreen> {
                     itemCount: _topics.length + (_hasMore ? 1 : 0),
                     itemBuilder: (context, i) {
                       if (i >= _topics.length) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 18),
-                          child: Center(
-                            child: SizedBox(
-                              width: 22,
-                              height: 22,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2.2),
-                            ),
-                          ),
-                        );
+                        return const NodelocLoadingFooter();
                       }
                       final t = _topics[i];
                       return TopicTile(

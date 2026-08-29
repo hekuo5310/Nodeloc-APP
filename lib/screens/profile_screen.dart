@@ -87,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (!app.isLoggedIn) {
       return Scaffold(
         appBar: AppBar(title: const Text('我的')),
-        body: EmptyView(
+        body: const EmptyView(
           text: '当前处于游客模式（未登录）\n可在设置中切换站点',
           icon: Icons.person_off_outlined,
         ),

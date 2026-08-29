@@ -6,6 +6,9 @@ import '../app_state.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../util.dart';
+import 'nodeloc_loading.dart';
+
+export 'nodeloc_loading.dart';
 
 /// 用户头像（带首字母回退）
 class UserAvatar extends StatelessWidget {
@@ -287,12 +290,15 @@ class EmptyView extends StatelessWidget {
   }
 }
 
-/// 加载指示器
+/// 加载指示器 —— Nodeloc 品牌动画（"nodeloc" 字标逐笔写出）
 class LoadingView extends StatelessWidget {
-  const LoadingView({super.key});
+  /// 动画显示宽度；默认 220
+  final double width;
+
+  const LoadingView({super.key, this.width = 220});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    return NodelocLoadingCenter(width: width);
   }
 }
