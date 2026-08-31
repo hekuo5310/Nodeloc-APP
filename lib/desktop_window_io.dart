@@ -13,11 +13,12 @@ Future<void> initDesktopWindow() async {
   await windowManager.ensureInitialized();
 
   final options = WindowOptions(
-    title: 'Nodeloc',
+    title: 'Nekoloc',
     size: const Size(1200, 800),
     minimumSize: const Size(440, 600),
     center: true,
-    backgroundColor: Colors.transparent,
+    // 与暗色主题背景同色，避免启动瞬间闪白/透明（默认暗色主题）
+    backgroundColor: const Color(0xFF12100D),
     titleBarStyle:
         Platform.isMacOS ? TitleBarStyle.hidden : TitleBarStyle.normal,
     skipTaskbar: false,
@@ -52,8 +53,16 @@ class DesktopTitleBar extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final isWin = Platform.isWindows;
 
-    return SizedBox(
+    return Container(
       height: 38,
+      // 必须自绘背景：无边框窗口下原生标题栏已移除，
+      // 若不填充颜色则顶栏区域透出桌面（“透明顶栏” bug）
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border(
+          bottom: BorderSide(color: scheme.onSurface.withOpacity(0.08)),
+        ),
+      ),
       child: DragToMoveArea(
         child: Row(
           children: [
@@ -66,7 +75,7 @@ class DesktopTitleBar extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'Nodeloc',
+              'Nekoloc',
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,

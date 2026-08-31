@@ -5,6 +5,8 @@ import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../update_checker.dart';
+
 /// 移动端：应用内全屏 WebView 路由
 class _WebViewLoginPage extends StatefulWidget {
   final String url;
@@ -66,11 +68,11 @@ Future<String?> openAuthorizeWindow(BuildContext context, String authUrl) async 
       configuration: const CreateConfiguration(
         windowHeight: 720,
         windowWidth: 500,
-        title: 'Nodeloc 登录授权',
+        title: 'Nekoloc 登录授权',
         titleBarHeight: 40,
       ),
     );
-    webview.setApplicationNameForUserAgent('NodelocApp/1.1');
+    webview.setApplicationNameForUserAgent('Nekoloc/$kAppVersion');
     webview.setOnUrlRequestCallback((url) {
       if (url.startsWith('discourse://')) {
         if (!settled) {

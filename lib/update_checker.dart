@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// 应用当前版本（与 pubspec version 保持一致；发版时同步修改）
-const String kAppVersion = '1.3.0';
+const String kAppVersion = '1.3.1';
 
 class UpdateInfo {
   final String version;
@@ -23,7 +23,7 @@ class UpdateInfo {
 
   /// 当前平台对应的安装包文件名（null 表示无对应资产，回退到 Release 页）
   static String? platformAssetName() {
-    if (Platform.isAndroid) return 'Nodeloc-Android-universal.apk';
+    if (Platform.isAndroid) return 'Nekoloc-Android-universal.apk';
     if (Platform.isWindows) return 'nodeloc-windows.zip';
     if (Platform.isMacOS) return 'nodeloc-macos.zip';
     if (Platform.isLinux) return 'nodeloc-linux.tar.gz';

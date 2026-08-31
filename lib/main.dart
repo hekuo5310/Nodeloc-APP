@@ -15,12 +15,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initDesktopWindow();
   final prefs = await SharedPreferences.getInstance();
-  runApp(NodelocApp(prefs: prefs));
+  runApp(NekolocApp(prefs: prefs));
 }
 
-class NodelocApp extends StatelessWidget {
+class NekolocApp extends StatelessWidget {
   final SharedPreferences prefs;
-  const NodelocApp({super.key, required this.prefs});
+  const NekolocApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context) {

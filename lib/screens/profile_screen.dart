@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../models.dart';
+import '../update_checker.dart';
 import '../util.dart';
 import '../widgets/common.dart';
 import 'bookmarks_screen.dart';
@@ -273,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Nodeloc App v1.1.0 · 社区开源客户端',
+              'Nekoloc v$kAppVersion · 第三方社区客户端',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 11.5, color: scheme.onSurfaceVariant),

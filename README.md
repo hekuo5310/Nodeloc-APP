@@ -4,7 +4,7 @@
 
 **Nekoloc**（neko（猫） + loc（NodeLoc））是 [NodeLoc](https://www.nodeloc.com)（自由、平等、友好、开放、有趣的互联网交流社区）的**第三方开源猫咪主题客户端**，基于 Flutter 构建，一套代码覆盖 **Android / iOS / Windows / macOS / Linux**。
 
-界面遵循 NodeLoc 官方品牌风格：暖黑背景 + 松石绿 / 橘橙双色主色调（提取自官网主题配色方案），并在品牌设计中融入猫元素：猫耳字标、甩尾加载动画与猫爪空态。
+界面遵循 NodeLoc 官方品牌风格：暖黑背景 + 松石绿 / 橘橙双色主色调（提取自官网主题配色方案），并在品牌设计中融入猫元素：猫耳字标、甩尾加载动画、猫爪空态与黑底猫面图标。
 
 > 本项目为社区驱动的非官方第三方客户端，站点地址固定为 `https://www.nodeloc.com`，与 NodeLoc 官方无关。
 
@@ -82,8 +82,8 @@ flutter create . --platforms=android,ios,linux,macos,windows \
   --org com.nodeloc --project-name nodeloc_app
 
 # 3. 打补丁（Android 网络权限、应用名、图标、macOS 沙盒权限等）
-python3 -m pip install pillow cairosvg   # 补丁与图标依赖
-python3 scripts/patch_platforms.py       # 若修改了 logo.svg，先跑 python3 scripts/make_icon.py
+python3 -m pip install pillow cairosvg   # 补丁依赖（图标已固定为设计稿，无需重跑 make_icon.py）
+python3 scripts/patch_platforms.py
 
 # 4. 运行
 flutter pub get

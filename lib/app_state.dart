@@ -105,7 +105,7 @@ class AppState extends ChangeNotifier {
     final nonce = randomHex(32);
     final clientId = randomHex(24);
     final authUrl = Uri.parse('$baseUrl/user-api-key/new').replace(queryParameters: {
-      'application_name': 'Nodeloc App',
+      'application_name': 'Nekoloc',
       'client_id': clientId,
       'scopes': 'read,write,session_info,notifications',
       'auth_redirect': 'discourse://auth_redirect',
