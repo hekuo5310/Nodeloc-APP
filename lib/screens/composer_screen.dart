@@ -174,6 +174,10 @@ class _ComposerScreenState extends State<ComposerScreen> {
     });
     final app = context.read<AppState>();
     try {
+      // 发帖设备信息：新话题与回复携带，私信不携带
+      final mobileSource = widget.isPrivateMessage
+          ? null
+          : await app.mobileSourceFields();
       Map<String, dynamic> result;
       if (widget.isPrivateMessage) {
         result = await app.api.createPrivateMessage(
@@ -186,12 +190,14 @@ class _ComposerScreenState extends State<ComposerScreen> {
           title: title,
           raw: raw,
           categoryId: _selectedCategory,
+          mobileSource: mobileSource,
         );
       } else {
         result = await app.api.createReply(
           topicId: widget.topicId!,
           raw: raw,
           replyToPostNumber: widget.replyToPostNumber,
+          mobileSource: mobileSource,
         );
       }
       if (!mounted) return;

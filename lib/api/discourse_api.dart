@@ -282,26 +282,32 @@ class DiscourseApi {
     return list.map((e) => Post.fromJson(e)).toList();
   }
 
+  /// 创建新话题。[mobileSource] 为发帖设备信息（mobile_source_* 字段，可空）
   Future<Map<String, dynamic>> createTopic({
     required String title,
     required String raw,
     int? categoryId,
+    Map<String, String>? mobileSource,
   }) =>
       _mutate('POST', '/posts', data: {
         'title': title,
         'raw': raw,
         if (categoryId != null) 'category': categoryId.toString(),
+        ...?mobileSource,
       });
 
+  /// 回复话题。[mobileSource] 为发帖设备信息（mobile_source_* 字段，可空）
   Future<Map<String, dynamic>> createReply({
     required int topicId,
     required String raw,
     int? replyToPostNumber,
+    Map<String, String>? mobileSource,
   }) =>
       _mutate('POST', '/posts', data: {
         'topic_id': topicId.toString(),
         'raw': raw,
         if (replyToPostNumber != null) 'reply_to_post_number': replyToPostNumber.toString(),
+        ...?mobileSource,
       });
 
   // ---------------------------------------------------------------- 点赞 / 表情反应

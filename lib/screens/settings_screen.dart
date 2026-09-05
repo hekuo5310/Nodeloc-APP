@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
+import '../mobile_source.dart';
 import '../theme.dart';
 import '../update_checker.dart';
 import '../widgets/common.dart';
@@ -18,6 +19,18 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _checking = false;
   int _pawTaps = 0; // 猫咪彩蛋计数器
+  String? _deviceBadge; // 当前设备徽章预览（null = 桌面端/不可用）
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDevicePreview();
+  }
+
+  Future<void> _loadDevicePreview() async {
+    final badge = await MobileSource.previewBadge(4);
+    if (mounted) setState(() => _deviceBadge = badge);
+  }
 
   Future<void> _checkUpdate() async {
     setState(() => _checking = true);
@@ -177,6 +190,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: _checking ? null : _checkUpdate,
                 ),
               ],
+            ),
+          ),
+          // ---------------- 发帖设备信息（对齐官方 APP mobile_source）
+          Card(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.smartphone_outlined, size: 18),
+                      SizedBox(width: 6),
+                      Text('发帖设备信息',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(
+                          value: 0,
+                          icon: Icon(Icons.block, size: 16),
+                          label: Text('关闭')),
+                      ButtonSegment(
+                          value: 1,
+                          icon: Icon(Icons.android, size: 16),
+                          label: Text('平台')),
+                      ButtonSegment(
+                          value: 3,
+                          icon: Icon(Icons.business, size: 16),
+                          label: Text('品牌')),
+                      ButtonSegment(
+                          value: 4,
+                          icon: Icon(Icons.smartphone, size: 16),
+                          label: Text('型号')),
+                    ],
+                    selected: {app.postSourceLevel},
+                    onSelectionChanged: (v) =>
+                        app.setPostSourceLevel(v.first),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _deviceBadge == null
+                        ? '移动端发帖时在帖子下方显示设备徽章；当前为桌面端，不会发送设备信息'
+                        : '移动端发帖时显示设备徽章，当前将显示：$_deviceBadge',
+                    style: TextStyle(
+                        fontSize: 12, color: scheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
             ),
           ),
           Card(

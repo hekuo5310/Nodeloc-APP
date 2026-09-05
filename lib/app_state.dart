@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
 import 'api/discourse_api.dart';
+import 'mobile_source.dart';
 import 'models.dart';
 import 'oauth/rsa.dart';
 import 'oauth/webview_login.dart';
@@ -28,6 +29,10 @@ class AppState extends ChangeNotifier {
   bool initialized = false;
   String? _userApiKey;
 
+  /// 发帖设备信息等级（对齐官方 APP 的 post_source_level）：
+  /// 0 = 关闭；1 = 仅平台；3 = 平台 + 品牌；4 = 完整型号。默认完整显示。
+  int postSourceLevel = 4;
+
   bool get isLoggedIn => user != null;
   DiscourseApi get api => _api ?? (throw StateError('API 未初始化'));
 
@@ -42,6 +47,7 @@ class AppState extends ChangeNotifier {
       _ => ThemeMode.dark,
     };
     _userApiKey = prefs.getString('user_api_key');
+    postSourceLevel = prefs.getInt('post_source_level') ?? 4;
     await _createApi();
     try {
       siteInfo = await api.siteBasicInfo();
@@ -170,6 +176,16 @@ class AppState extends ChangeNotifier {
 
   String? avatarUrl(String? template, {int size = 96}) =>
       _api?.resolveAvatarUrl(template, size: size);
+
+  /// 发帖时携带的 mobile_source 设备信息字段（关闭 / 桌面端返回 null）
+  Future<Map<String, String>?> mobileSourceFields() =>
+      MobileSource.fieldsForLevel(postSourceLevel);
+
+  void setPostSourceLevel(int level) {
+    postSourceLevel = level;
+    prefs.setInt('post_source_level', level);
+    notifyListeners();
+  }
 
   /// 检查 GitHub 最新 Release 是否有新版本；有则置 updateInfo 并通知
   Future<void> checkForUpdate({bool force = false}) async {
